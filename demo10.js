@@ -14,8 +14,6 @@ const FSHADER_SOURCE = `
   }
 `
 
-const ANGLE_STEP = 45.0
-
 const main = () => {
   const canvas = document.getElementById('webgl')
   const gl = getWebGLContext(canvas)
@@ -36,31 +34,29 @@ const main = () => {
     console.log('Failed to set the positions of the vertices')
   }
 
-  // 设置背景色
-  gl.clearColor(0, 0, 0, 1)
+  // const xformMatrix = new Matrix4()
+  // xformMatrix.setRotate(ANGLE, 0, 0, 1)
+
+  const ANGLE = 60.0
+  const Tx = 0.1
+
+  const modelMatrix = new Matrix4()
+  modelMatrix.setRotate(ANGLE, 0, 0, 1) // 设置为旋转矩阵
+  modelMatrix.translate(Tx, 0, 0) // 将模型矩阵乘以平移矩阵
 
   const u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix')
-  if (!u_ModelMatrix) { 
-    console.log('Failed to get the storage location of u_ModelMatrix');
-    return;
-  }
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements)
 
-  let currentAngle = 0.0
-  const modelMatrix = new Matrix4()
+  gl.clearColor(0.0, 0.0, 0.0, 1.0) // 清空绘图区之前, 要指定背景色
+  gl.clear(gl.COLOR_BUFFER_BIT)
 
-  // 绘制三角形
-  const tick = () => {
-    currentAngle = animate(currentAngle)
-    draw(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
-    requestAnimationFrame(tick, canvas)
-  }
-
-  tick()
+  // 绘制多点
+  gl.drawArrays(gl.TRIANGLE_FAN, 0, n)
 }
 
 const initVertexBuffers = (gl) => {
-  const vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5])
-  const n = 3
+  const vertices = new Float32Array([-0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5])
+  const n = 4
   // 创建缓冲区对象
   const vertexBuffer = gl.createBuffer()
   if (!vertexBuffer) {
@@ -81,34 +77,20 @@ const initVertexBuffers = (gl) => {
   return n
 }
 
-const draw = (gl, n, currentAngle, modelMatrix, u_ModelMatrix) => {
-  modelMatrix.setRotate(currentAngle, 0, 0, 1)
-  // modelMatrix.translate(0.35, 0, 0);
-
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements)
-
-  gl.clear(gl.COLOR_BUFFER_BIT)
-
-  gl.drawArrays(gl.TRIANGLES, 0, n)
-}
-
-let g_last = Date.now()
-const animate = (angle) => {
-  const now = Date.now()
-  const elapsed = now - g_last
-  g_last = now
-  let newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0
-  return newAngle %= 360
-}
-
 main()
 
 /**
  * 知识点
- * 动画
+ * setTranslate(x, y, z) // 设置为平移变换矩阵
+ * setRotate(x, y, z) // 旋转
+ * setScale(x, y, z) // 缩放
+ * translate(x, y, z) // 乘以平移变换矩阵
+ * rotate(angle, x, y, x) // 乘以旋转
+ * scale(x, y, z) // 乘以缩放
+ * 
+ * Matrix4.elements // 类型化数组, 包含矩阵元素
  */
 
  /**
   * 遇到问题
-  * drawArray 类型拼写错误, 不方便迅速定位问题
   */
